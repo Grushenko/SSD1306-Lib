@@ -1,6 +1,6 @@
 #include "Framebuffer.h"
 
-Framebuffer::Framebuffer(I2C* i2c, uint8_t addr, uint8_t width, uint8_t height) : m_height(height), m_width(width), m_display(i2c, addr, width, height {
+Framebuffer::Framebuffer(I2C* i2c, uint8_t addr, uint8_t width, uint8_t height) : m_height(height), m_width(width), m_display(i2c, addr, width, height) {
     m_buffersize = (width*height)/8;
     m_buffer = new uint8_t[m_buffersize];
     this->clear();

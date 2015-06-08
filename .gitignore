@@ -1,7 +1,2 @@
 .DS_Store
 *.o
-examples/example1/example1
-examples/example1/example1.hex
-examples/example2/example2
-examples/example2/example2.hex
-simulator/simulator

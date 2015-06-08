@@ -1,37 +1,13 @@
-/*
-This is free and unencumbered software released into the public domain.
-
-Anyone is free to copy, modify, publish, use, compile, sell, or
-distribute this software, either in source code form or as a compiled
-binary, for any purpose, commercial or non-commercial, and by any
-means.
-
-In jurisdictions that recognize copyright laws, the author or authors
-of this software dedicate any and all copyright interest in the
-software to the public domain. We make this dedication for the benefit
-of the public at large and to the detriment of our heirs and
-successors. We intend this dedication to be an overt act of
-relinquishment in perpetuity of all present and future rights to this
-software under copyright law.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
-
-For more information, please refer to <http://unlicense.org/>
-*/
-
 #include "Framebuffer.h"
 
-Framebuffer::Framebuffer() {
+Framebuffer::Framebuffer(I2C* i2c, uint8_t addr, uint8_t width, uint8_t height) : m_height(height), m_width(width), m_display(i2c, addr, width, height {
+    m_buffersize = (width*height)/8;
+    m_buffer = new uint8_t[m_buffersize];
     this->clear();
 }
 
-#ifndef SIMULATOR
+/*
+
 void Framebuffer::drawBitmap(const uint8_t *progmem_bitmap, uint8_t height, uint8_t width, uint8_t pos_x, uint8_t pos_y) {
     uint8_t current_byte;
     uint8_t byte_width = (width + 7)/8;
@@ -48,6 +24,7 @@ void Framebuffer::drawBitmap(const uint8_t *progmem_bitmap, uint8_t height, uint
     }
 }
 
+
 void Framebuffer::drawBuffer(const uint8_t *progmem_buffer) {
     uint8_t current_byte;
 
@@ -62,26 +39,27 @@ void Framebuffer::drawBuffer(const uint8_t *progmem_buffer) {
         }
     }
 }
-#endif
+
+*/
 
 void Framebuffer::drawPixel(uint8_t pos_x, uint8_t pos_y, uint8_t pixel_status) {
-    if (pos_x >= SSD1306_WIDTH || pos_y >= SSD1306_HEIGHT) {
+    if (pos_x >= m_width || pos_y >= m_height) {
         return;
     }
 
     if (pixel_status) {
-        this->buffer[pos_x+(pos_y/8)*SSD1306_WIDTH] |= (1 << (pos_y&7));
+        this->m_buffer[pos_x+(pos_y/8)*m_width] |= (1 << (pos_y&7));
     } else {
-        this->buffer[pos_x+(pos_y/8)*SSD1306_WIDTH] &= ~(1 << (pos_y&7));
+        this->m_buffer[pos_x+(pos_y/8)*m_width] &= ~(1 << (pos_y&7));
     }
 }
 
 void Framebuffer::drawPixel(uint8_t pos_x, uint8_t pos_y) {
-    if (pos_x >= SSD1306_WIDTH || pos_y >= SSD1306_HEIGHT) {
+    if (pos_x >= m_width || pos_y >= m_height) {
         return;
     }
 
-    this->buffer[pos_x+(pos_y/8)*SSD1306_WIDTH] |= (1 << (pos_y&7));
+    this->m_buffer[pos_x+(pos_y/8)*m_width] |= (1 << (pos_y&7));
 }
 
 void Framebuffer::drawVLine(uint8_t x, uint8_t y, uint8_t length) {
@@ -122,15 +100,15 @@ void Framebuffer::drawRectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, 
 }
 
 void Framebuffer::clear() {
-    for (uint16_t buffer_location = 0; buffer_location < SSD1306_BUFFERSIZE; buffer_location++) {
-        this->buffer[buffer_location] = 0x00;
+    for (uint16_t buffer_location = 0; buffer_location < m_buffersize; buffer_location++) {
+        this->m_buffer[buffer_location] = 0x00;
     }
 }
 
 void Framebuffer::invert(uint8_t status) {
-    this->oled.invert(status);
+    this->m_display.invert(status);
 }
 
 void Framebuffer::show() {
-    this->oled.sendFramebuffer(this->buffer);
+    this->m_display.sendFramebuffer(this->m_buffer);
 }

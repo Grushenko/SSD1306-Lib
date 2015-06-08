@@ -1,41 +1,16 @@
-/*
-This is free and unencumbered software released into the public domain.
-
-Anyone is free to copy, modify, publish, use, compile, sell, or
-distribute this software, either in source code form or as a compiled
-binary, for any purpose, commercial or non-commercial, and by any
-means.
-
-In jurisdictions that recognize copyright laws, the author or authors
-of this software dedicate any and all copyright interest in the
-software to the public domain. We make this dedication for the benefit
-of the public at large and to the detriment of our heirs and
-successors. We intend this dedication to be an overt act of
-relinquishment in perpetuity of all present and future rights to this
-software under copyright law.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
-
-For more information, please refer to <http://unlicense.org/>
-*/
-
 #include <stdint.h>
+
 #include "SSD1306.h"
 
-#ifdef SIMULATOR
-#include "simulator/I2C.h"
-#else
-#include "I2C.h"
-#endif
+SSD1306::SSD1306(I2C* i2c, uint8_t addr, uint8_t width, uint8_t height) {
 
-SSD1306::SSD1306() {
-    i2c.init(SSD1306_DEFAULT_ADDRESS);
+    m_i2c = i2c;
+
+    m_width = width;
+    m_height = height;
+    m_buffersize = (width*height)/8;
+
+    (*m_i2c).init(addr);
 
     // Turn display off
     sendCommand(SSD1306_DISPLAYOFF);
@@ -45,20 +20,20 @@ SSD1306::SSD1306() {
 
     sendCommand(SSD1306_SETMULTIPLEX);
     sendCommand(0x3F);
-    
+
     sendCommand(SSD1306_SETDISPLAYOFFSET);
     sendCommand(0x00);
-    
+
     sendCommand(SSD1306_SETSTARTLINE | 0x00);
-    
+
     // We use internal charge pump
     sendCommand(SSD1306_CHARGEPUMP);
     sendCommand(0x14);
-    
+
     // Horizontal memory mode
     sendCommand(SSD1306_MEMORYMODE);
     sendCommand(0x00);
-    
+
     sendCommand(SSD1306_SEGREMAP | 0x1);
 
     sendCommand(SSD1306_COMSCANDEC);
@@ -86,10 +61,10 @@ SSD1306::SSD1306() {
 }
 
 void SSD1306::sendCommand(uint8_t command) {
-    i2c.start();
-    i2c.write(0x00);
-    i2c.write(command);
-    i2c.stop();
+  (*m_i2c).start();
+  (*m_i2c).write(0x00);
+  (*m_i2c).write(command);
+  (*m_i2c).stop();
 }
 
 void SSD1306::invert(uint8_t inverted) {
@@ -110,14 +85,14 @@ void SSD1306::sendFramebuffer(uint8_t *buffer) {
     sendCommand(0x07);
 
     // We have to send the buffer as 16 bytes packets
-    // Our buffer is 1024 bytes long, 1024/16 = 64
-    // We have to send 64 packets
-    for (uint8_t packet = 0; packet < 64; packet++) {
-        i2c.start();
-        i2c.write(0x40);
+    // Our buffer is m_buffersize bytes long
+    // We have to send m_buffersize/16 packets
+    for (uint8_t packet = 0; packet < m_buffersize/16; packet++) {
+      (*m_i2c).start();
+      (*m_i2c).write(0x40);
         for (uint8_t packet_byte = 0; packet_byte < 16; ++packet_byte) {
-            i2c.write(buffer[packet*16+packet_byte]);
+          (*m_i2c).write(buffer[packet*16+packet_byte]);
         }
-        i2c.stop();
+        (*m_i2c).stop();
     }
 }
